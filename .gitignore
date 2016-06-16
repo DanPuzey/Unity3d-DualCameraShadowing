@@ -1,0 +1,43 @@
+# compile outputs
+bin/
+obj/
+
+# Nuget
+packages/
+
+# ncrunch
+*.ncrunchsolution*
+*.ncrunchproject*
+
+# VS user files
+*.csproj.user
+*.suo
+
+# unneeded Unity folders
+temp/
+library/
+screenshots/
+
+# unneeded Unity files
+*.sln
+*.sln.*
+*.csproj
+*.csproj.*
+*.unityproj
+
+# Unity Editor folder will have needed dlls in!
+!*.dll
+
+# Obj files are important!
+!*.obj
+
+# Plugins that we don't want
+Assets/UnityVS.meta
+Assets/UnityVS/
+Assets/ConsolePro.meta
+Assets/ConsolePro/
+Assets/ShaderForge
+Assets/ShaderForge.meta
+
+# Monodevelop user files
+*.userprefs
