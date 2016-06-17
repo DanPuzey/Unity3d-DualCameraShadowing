@@ -1,46 +1,52 @@
 ﻿Shader "Custom/WriteDepthBuffer"
 {
-	Properties
-	{
-        _MainTex("Texture", 2D) = "white" {}
-	}
-	SubShader
-	{
+    Properties
+    {
+        _DiffuseTexture("Diffuse Texture", 2D) = "white" {}
+        _DiffuseTint("Diffuse Tint", Color) = (1, 1, 1, 1)
+    }
+        SubShader
+    {
         Tags {
-            "Queue" = "Geometry"
-            //"IgnoreProjector" = "True"
             "RenderType" = "Opaque"
         }
         LOD 100
 
-		// No culling or depth
-		Cull Off ZWrite Off ZTest Always
+        // No culling or depth
+        ZTest Always
 
-		Pass
-		{
-			CGPROGRAM
-			#pragma vertex vert
-			#pragma fragment frag
+        Pass
+        {
+            Tags { "LightMode" = "Deferred" }
+
+            CGPROGRAM
+#pragma target 3.0
+            #pragma vertex vert
+            #pragma fragment frag
             #pragma multi_compile_fwdadd_fullshadows
-			
-			#include "UnityCG.cginc"
-            #include "UnityLightingCommon.cginc"
+#pragma fragmentoption ARB_precision_hint_fastest
 
-			struct appdata
-			{
+            #include "UnityCG.cginc"
+            #include "UnityLightingCommon.cginc"
+            #include "AutoLight.cginc"
+
+            struct appdata
+            {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
                 float4 diff : COLOR0; // diffuse lighting colour
                 float3 normal: NORMAL;
                 UNITY_FOG_COORDS(1)
-			};
+            };
 
-			struct v2f
-			{
-				float2 uv : TEXCOORD0;
-				float4 vertex : SV_POSITION;
-                float4 diff : COLOR0; // diffuse lighting colour
-			};
+            struct v2f
+            {
+                float4 pos : SV_POSITION;
+                float3 lightDir : TEXCOORD0;
+                float3 normal : TEXCOORD1;
+                float2 uv : TEXCOORD2;
+                LIGHTING_COORDS(4, 5)
+            };
 
             struct fragOut
             {
@@ -48,38 +54,37 @@
                 float dep : SV_DEPTH;
             };
 
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
+            sampler2D _DiffuseTexture;
+            float4 _DiffuseTint;
 
-			v2f vert (appdata v)
-			{
-				v2f o;
-				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                UNITY_TRANSFER_FOG(o, o.vertex);
+            v2f vert(appdata_base v)
+            {
+                v2f o;
 
-                // get vertex normal in world space
-                half3 worldNormal = UnityObjectToWorldNormal(v.normal);
-                // dot product between normal and light direction for
-                // standard diffuse (Lambert) lighting
-                half nl = max(0, dot(worldNormal, _WorldSpaceLightPos0.xyz));
-                // factor in the light color
-                o.diff = nl * _LightColor0;
+                o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+                o.uv = v.texcoord;
+                o.lightDir = normalize(ObjSpaceLightDir(v.vertex));
+                o.normal = normalize(v.normal).xyz;
 
-                // add ambient/light proble light
-                o.diff.rgb += ShadeSH9(half4(worldNormal, 1));
+                TRANSFER_VERTEX_TO_FRAGMENT(o)
 
-				return o;
-			}
-			
-			fragOut frag (v2f i) : SV_Target
-			{
-                fixed4 col = tex2D(_MainTex, i.uv);
+                return o;
+            }
 
-                // apply lighting
-                fixed alpha = col.w;
-                col *= i.diff;
-                col.w = alpha;
+            fixed4 frag(v2f i) : SV_Target
+            {
+                fixed4 col = tex2D(_DiffuseTexture, i.uv);
+
+                float3 L = normalize(i.lightDir);
+                float3 N = normalize(i.normal);
+
+                float attenuation = LIGHT_ATTENUATION(i) * 2;
+                float4 ambient = UNITY_LIGHTMODEL_AMBIENT * 2;
+
+                float NdotL = saturate(dot(N, L));
+                float4 diffuseTerm = NdotL * _LightColor0 * _DiffuseTint * attenuation;
+
+                col = (ambient + diffuseTerm) * col;
 
                 UNITY_APPLY_FOG(i.fogCoord, col);
 
@@ -87,9 +92,11 @@
                 o.col = col;
                 o.dep = 0;
 
-                return o;
-			}
-			ENDCG
-		}
-	}
+                return col;
+            }
+            ENDCG
+        }
+    }
+
+    FallBack "Diffuse"
 }
