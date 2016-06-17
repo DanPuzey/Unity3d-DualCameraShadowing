@@ -1,6 +1,5 @@
-﻿Shader "Custom/RenderGlobalTexture" {
+﻿Shader "Custom/RenderLastDepthTexture" {
 	Properties {
-        _Color("Color", Color) = (1,1,1,1)
 	}
 	SubShader {
 		Tags { "RenderType"="Opaque" }
@@ -13,17 +12,19 @@
 		// Use shader model 3.0 target, to get nicer looking lighting
 		#pragma target 3.0
 
-		sampler2D _GlobalShadowMap;
+        sampler2D _LightBuffer;
 
 		struct Input {
-			float2 uv_GlobalShadowMap;
+			float2 uv_LightBuffer;
 		};
 
+		half _Glossiness;
+		half _Metallic;
 		fixed4 _Color;
 
 		void surf (Input IN, inout SurfaceOutputStandard o) {
 			// Albedo comes from a texture tinted by color
-            fixed4 c = tex2D(_GlobalShadowMap, IN.uv_GlobalShadowMap) * _Color;
+			fixed4 c = tex2D (_LightBuffer, IN.uv_LightBuffer);
 			o.Albedo = c.rgb;            
 		}
 		ENDCG
