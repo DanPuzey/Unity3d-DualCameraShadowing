@@ -1,4 +1,4 @@
-﻿Shader "Custom/RenderGlobalTexture" {
+﻿Shader "Custom/SolidPurple" {
 	Properties {
         _Color("Color", Color) = (1,1,1,1)
 	}

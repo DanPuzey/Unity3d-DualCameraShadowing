@@ -24,8 +24,6 @@
         fixed4 _Color;
 
         void surf(Input IN, inout SurfaceOutputStandard o) {
-            fixed4 s = tex2D(_GlobalShadowMap)
-
             // Albedo comes from a texture tinted by color
             fixed4 c = tex2D(_GlobalShadowMap, IN.uv_GlobalShadowMap) * _Color;
             o.Albedo = c.rgb;

@@ -1,4 +1,4 @@
-﻿Shader "Custom/RenderLastDepthTexture" {
+﻿Shader "Custom/RenderLightBuffer" {
 	Properties {
 	}
 	SubShader {
